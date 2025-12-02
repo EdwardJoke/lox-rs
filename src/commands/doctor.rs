@@ -1,62 +1,62 @@
 use std::env;
-use std::fs::{read_to_string, File};
+use std::fs::{read_to_string, write};
 use std::process::Command;
 
 pub fn run() {
     println!();
     
-    // Check if this is the first run by looking for a marker file
-    let is_first_run = !std::fs::metadata("loxproject.toml").is_ok();
+    // Check if this is the first run by looking for the config file
+    let is_first_run = !std::fs::metadata("lox.toml").is_ok();
     
     if is_first_run {
         println!("[TIP] + Never run the doctor command in the project before.");
-        // Create the marker file
-        if let Err(e) = File::create("loxproject.toml") {
-            eprintln!("Warning: Failed to create first run marker: {}", e);
-        }
     }
     
     println!();
     println!("[1/2] + Project informations");
     
     // Parse Cargo.toml for project information
-    if let Ok(cargo_toml) = read_to_string("Cargo.toml") {
-        let mut project_name = "unknown";
-        let mut project_version = "unknown";
-        let mut project_type = "unknown";
-        
-        // Extract project information from Cargo.toml
-        for line in cargo_toml.lines() {
+    let mut project_type = String::from("unknown");
+    let mut project_name = String::from("unknown");
+    let mut project_version = String::from("unknown");
+    
+    // Extract project information from Cargo.toml
+    if let Ok(cargo_content) = read_to_string("Cargo.toml") {
+        for line in cargo_content.lines() {
             if line.starts_with("name = ") {
-                project_name = line.split_once('"').and_then(|(_, rest)| rest.split_once('"')).map(|(name, _)| name).unwrap_or("unknown");
+                if let Some((_, rest)) = line.split_once('"') {
+                    if let Some((name, _)) = rest.split_once('"') {
+                        project_name = name.to_string();
+                    }
+                }
             } else if line.starts_with("version = ") {
-                project_version = line.split_once('"').and_then(|(_, rest)| rest.split_once('"')).map(|(version, _)| version).unwrap_or("unknown");
+                if let Some((_, rest)) = line.split_once('"') {
+                    if let Some((version, _)) = rest.split_once('"') {
+                        project_version = version.to_string();
+                    }
+                }
             } else if line.starts_with("[lib]") {
-                project_type = "library(lib)";
+                project_type = String::from("library(lib)");
             } else if line.starts_with("[[bin]]") {
-                project_type = "application(bin)";
+                project_type = String::from("app(bin)");
             }
         }
-        
-        // If no explicit type found, default to binary if there's a main.rs
-        if project_type == "unknown" {
-            project_type = if std::fs::metadata("src/main.rs").is_ok() {
-                "application(bin)"
-            } else if std::fs::metadata("src/lib.rs").is_ok() {
-                "library(lib)"
-            } else {
-                "unknown"
-            };
-        }
-        
-        println!("  - Project type:           {}", project_type);
-        println!("  - Project name:           {}", project_name);
-        println!("  - Project version:        {}", project_version);
-    } else {
-        println!("  - Project type:           unknown");
-        println!("  - Project name:           unknown");
-        println!("  - Project version:        unknown");
     }
+    
+    // If no explicit type found, default to binary if there's a main.rs
+    if project_type == "unknown" {
+        project_type = if std::fs::metadata("src/main.rs").is_ok() {
+            String::from("app(bin)")
+        } else if std::fs::metadata("src/lib.rs").is_ok() {
+            String::from("library(lib)")
+        } else {
+            String::from("unknown")
+        };
+    }
+    
+    println!("  - Project type:           {}", project_type);
+    println!("  - Project name:           {}", project_name);
+    println!("  - Project version:        {}", project_version);
     
     println!("  - Project build(dev):     cargo build");
     println!("  - Project build(release): cargo build --release");
@@ -66,6 +66,7 @@ pub fn run() {
     // Get OS information
     let os = env::consts::OS;
     let arch = env::consts::ARCH;
+    let formatted_os = format_os_name(os);
 
     // Get RustC version
     let rustc_output = Command::new("rustc")
@@ -91,11 +92,30 @@ pub fn run() {
         .nth(1)
         .unwrap_or("unknown");
 
-    println!("  - Operating system:      {}", format_os_name(os));
+    println!("  - Operating system:      {}", formatted_os);
     println!("  - CPU architecture:      {}", arch);
     println!("  - RustC version:         {}", rustc_version);
     println!("  - Cargo version:         {}", cargo_version);
     println!();
+    
+    // Create and write to lox.toml only on first run
+    if is_first_run {
+        // Create TOML content for project configuration
+        let toml_content = format!(
+            "\n[project]\ntype = \"{}\"\nname = \"{}\"\nversion = \"{}\"\n\n[project.build]\ndev = \"cargo build\"\nrelease = \"cargo build --release\"\n\n[environment]\nos = \"{}\"\narch = \"{}\"\nrustc_version = \"{}\"\ncargo_version = \"{}\"\n",
+            project_type, project_name, project_version,
+            formatted_os, arch, rustc_version, cargo_version
+        );
+        
+        // Write the configuration to lox.toml
+        if let Err(e) = write("lox.toml", toml_content) {
+            eprintln!("Warning: Failed to write project configuration to lox.toml: {}", e);
+        } else {
+            println!("[TIP] + Project configuration saved to `lox.toml`.
+");
+        }
+    }
+    
     println!("[TIP] + Everything is Up-to-date.");
     println!("[TIP] + [Task End]");
     println!();

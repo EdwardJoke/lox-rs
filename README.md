@@ -48,7 +48,7 @@ lox doctor
 [TIP] + Never run the doctor command in the project before.
 
 [1/2] + Project informations
-  - Project type:           application(bin)
+  - Project type:           app(bin)
   - Project name:           lox-rs
   - Project version:        0.1.0
   - Project build(dev):     cargo build
