@@ -1,8 +1,4 @@
-mod build;
-mod dash;
-mod dev;
-mod doctor;
-mod run;
+mod commands;
 
 use clap::Parser;
 
@@ -31,10 +27,10 @@ fn main() {
     let args = Args::parse();
 
     match args.command {
-        Commands::Doctor => doctor::run(),
-        Commands::Dev => dev::run(),
-        Commands::Build => build::run(),
-        Commands::Dash => dash::run(),
-        Commands::Run => run::run(),
+        Commands::Doctor => commands::doctor::run(),
+        Commands::Dev => commands::dev::run(),
+        Commands::Build => commands::build::run(),
+        Commands::Dash => commands::dash::run(),
+        Commands::Run => commands::run::run(),
     }
 }
