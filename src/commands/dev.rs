@@ -73,7 +73,7 @@ pub fn run() {
     );
 
     println!();
-    println!("[TIP] + Build at + `./target/debug/lox-rs` .");
+    println!("[TIP] + Build at + `target` .");
     println!("[TIP] + [Task End]");
     println!();
 }

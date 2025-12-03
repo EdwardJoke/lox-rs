@@ -94,7 +94,7 @@ fn build_rust_project() {
     );
 
     println!();
-    println!("[TIP] + Build at + `./target/release/lox-rs` .");
+    println!("[TIP] + Build at + `target` .");
     println!("[TIP] + [Task End]");
     println!();
 }
