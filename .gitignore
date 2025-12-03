@@ -1,3 +1,13 @@
+# Ignore files
+
+# Target directory
 /target
+
+# Dev docs and tools directory
 /dev
+
+# Test settings file
 /lox.toml
+
+# New project support test directory
+/test_projects
