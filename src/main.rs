@@ -1,5 +1,6 @@
 mod commands;
 mod projects;
+mod tasks;
 
 use clap::Parser;
 

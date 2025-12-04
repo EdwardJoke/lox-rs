@@ -1,4 +1,5 @@
 use crate::projects;
+use crate::tasks;
 use std::fs::metadata;
 use std::process::Command;
 use std::time::Instant;
@@ -93,19 +94,7 @@ fn run_project(project: &projects::Project) {
     } else if project.is_uv_project {
         // For UV projects, lock dependencies first
         println!("[1/2] + Lock the project dependencies.");
-        println!("  - Task | uv lock | ");
-        let lock_status = Command::new("uv")
-            .arg("lock")
-            .status()
-            .expect("Failed to execute uv lock");
-        println!(
-            "  - Task | uv lock | {}.",
-            if lock_status.success() {
-                "Done"
-            } else {
-                "Failed"
-            }
-        );
+        tasks::execute_task_by_id(tasks::UV_LOCK);
         println!();
 
         println!("[2/2] + Run the project.");

@@ -1,5 +1,5 @@
 use crate::projects;
-use std::process::Command;
+use crate::tasks;
 
 pub fn run() {
     println!();
@@ -26,72 +26,17 @@ fn build_dev_rust_project(project: &projects::Project) {
     println!();
     println!("[1/3] + Download dependencies");
 
-    // Run cargo update
-    println!("  - Task | cargo update | ");
-    let update_status = Command::new("cargo")
-        .arg("update")
-        .status()
-        .expect("Failed to execute cargo update");
-    println!(
-        "  - Task | cargo update | {}.",
-        if update_status.success() {
-            "Done"
-        } else {
-            "Failed"
-        }
-    );
-
-    // Run cargo fmt
-    println!("  - Task | cargo fmt    | ");
-    let fmt_status = Command::new("cargo")
-        .arg("fmt")
-        .status()
-        .expect("Failed to execute cargo fmt");
-    println!(
-        "  - Task | cargo fmt    | {}.",
-        if fmt_status.success() {
-            "Done"
-        } else {
-            "Failed"
-        }
-    );
+    // Execute tasks using the new task system
+    tasks::execute_task_by_id(tasks::CARGO_UPDATE);
+    tasks::execute_task_by_id(tasks::CARGO_FMT);
 
     println!();
     println!("[2/3] + Check the project");
-
-    // Run cargo check
-    println!("  - Task | cargo check  | ");
-    let check_status = Command::new("cargo")
-        .arg("check")
-        .status()
-        .expect("Failed to execute cargo check");
-    println!(
-        "  - Task | cargo check  | {}.",
-        if check_status.success() {
-            "Done"
-        } else {
-            "Failed"
-        }
-    );
+    tasks::execute_task_by_id(tasks::CARGO_CHECK);
 
     println!();
     println!("[3/3] + Build the project");
-
-    // Run cargo build
-    println!("  - Task | {} | ", project.build_commands.dev);
-    let build_status = Command::new("cargo")
-        .arg("build")
-        .status()
-        .expect("Failed to execute cargo build");
-    println!(
-        "  - Task | {} | {}.",
-        project.build_commands.dev,
-        if build_status.success() {
-            "Done"
-        } else {
-            "Failed"
-        }
-    );
+    tasks::execute_task_by_id(tasks::CARGO_BUILD);
 
     println!();
     println!("[TIP] + Build at + `target` .");
