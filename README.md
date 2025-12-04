@@ -2,7 +2,7 @@
 
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/EdwardJoke/lox-rs/blob/main/LICENSE) [![Release](https://img.shields.io/github/v/release/EdwardJoke/lox-rs)](https://github.com/EdwardJoke/lox-rs/releases)
 
-A command-line interface tool that makes executing your project commands easier, supporting both Rust and Python projects.
+A command-line interface tool that makes managing your project commands easier, supporting both Rust and Python (Only uv project support now) projects.
 
 ## Overview
 

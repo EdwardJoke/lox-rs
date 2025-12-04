@@ -1,11 +1,11 @@
-use crate::project;
+use crate::projects;
 use std::process::Command;
 
 pub fn run() {
     println!();
 
     // Get project information
-    let project = project::get_or_create_project();
+    let project = projects::get_or_create_project();
 
     if project.is_rust_project || project.is_uv_project {
         build_project(&project);
@@ -16,7 +16,7 @@ pub fn run() {
     }
 }
 
-fn build_project(project: &project::Project) {
+fn build_project(project: &projects::Project) {
     if project.is_rust_project {
         build_rust_project(project);
     } else if project.is_uv_project {
@@ -24,7 +24,7 @@ fn build_project(project: &project::Project) {
     }
 }
 
-fn build_rust_project(project: &project::Project) {
+fn build_rust_project(project: &projects::Project) {
     println!("[TIP] + Build for Release.");
     println!();
     println!("[1/3] + Download dependencies");
@@ -103,7 +103,7 @@ fn build_rust_project(project: &project::Project) {
     println!();
 }
 
-fn build_uv_project(project: &project::Project) {
+fn build_uv_project(project: &projects::Project) {
     println!("[TIP] + Build the project.");
     println!();
     println!("[1/3] + Lock the project dependencies");

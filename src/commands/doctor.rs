@@ -1,4 +1,4 @@
-use crate::project;
+use crate::projects;
 use std::env;
 use std::fs::write;
 use std::process::Command;
@@ -17,7 +17,7 @@ pub fn run() {
     println!("[1/2] + Project informations");
 
     // Get project information from the shared module
-    let project = project::detect_project_info();
+    let project = projects::detect_project_info();
 
     // Display project type with conditional suffix
     if project.is_rust_project {
@@ -69,7 +69,7 @@ pub fn run() {
     // Get OS information
     let os = env::consts::OS;
     let arch = env::consts::ARCH;
-    let formatted_os = project::format_os_name(os);
+    let formatted_os = projects::format_os_name(os);
 
     println!("  - Operating system:      {}", formatted_os);
     println!("  - CPU architecture:      {}", arch);

@@ -1,14 +1,19 @@
-use crate::project;
+use crate::projects;
 use std::process::Command;
 
 pub fn run() {
     println!();
 
     // Get project information
-    let project = project::get_or_create_project();
+    let project = projects::get_or_create_project();
 
     if project.is_rust_project {
         build_dev_rust_project(&project);
+    } else if project.is_uv_project {
+        println!("[TIP] + The `dev` command is not supported for `uv` projects.");
+        println!("[TIP] + Please use `lox run` or `lox build`.");
+        println!("[TIP] + [Task End]");
+        println!();
     } else {
         println!("[TIP] + Unknown project type. No dev configuration found.");
         println!("[TIP] + [Task End]");
@@ -16,7 +21,7 @@ pub fn run() {
     }
 }
 
-fn build_dev_rust_project(project: &project::Project) {
+fn build_dev_rust_project(project: &projects::Project) {
     println!("[TIP] + Build for Dev.");
     println!();
     println!("[1/3] + Download dependencies");
