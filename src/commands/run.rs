@@ -1,10 +1,10 @@
 use crate::projects;
 use crate::tasks;
 use std::fs::metadata;
-use std::process::Command;
 use std::time::Instant;
+use tokio::process::Command;
 
-pub fn run() {
+pub async fn run() {
     println!();
 
     // Get project information
@@ -20,7 +20,7 @@ pub fn run() {
             println!();
             return;
         }
-        run_project(&project);
+        run_project(&project).await;
     } else {
         println!("[TIP] + Unknown project type. No run configuration found.");
         println!("[TIP] + [Task End]");
@@ -28,8 +28,11 @@ pub fn run() {
     }
 }
 
-fn run_project(project: &projects::Project) {
+async fn run_project(project: &projects::Project) {
     let target_release = &project.run_commands.release;
+
+    // Start timer for all tasks
+    let overall_start_time = Instant::now();
 
     // Only check target directory for Rust/Cargo projects
     if project.is_rust_project {
@@ -51,6 +54,7 @@ fn run_project(project: &projects::Project) {
                         .arg("--")
                         .arg("build")
                         .status()
+                        .await
                         .expect("Failed to execute lox build");
                     println!(
                         "  - Task | lox build | {}.",
@@ -76,6 +80,7 @@ fn run_project(project: &projects::Project) {
                     .arg("--")
                     .arg("build")
                     .status()
+                    .await
                     .expect("Failed to execute lox build");
                 println!(
                     "  - Task | lox build | {}.",
@@ -94,16 +99,16 @@ fn run_project(project: &projects::Project) {
     } else if project.is_uv_project {
         // For UV projects, lock dependencies first
         println!("[1/2] + Lock the project dependencies.");
-        tasks::execute_task_by_id(tasks::UV_LOCK);
+        tasks::execute_task_by_id(tasks::UV_LOCK).await;
         println!();
 
         println!("[2/2] + Run the project.");
     }
 
-    // Run the release command and measure time
+    // Run the release command and measure its time
     println!("  - Task | {} | ", target_release);
-    let start_time = Instant::now();
-    
+    let command_start_time = Instant::now();
+
     // Split command into binary and arguments for proper execution
     let mut parts = target_release.split_whitespace();
     let run_status = if let Some(binary) = parts.next() {
@@ -111,13 +116,14 @@ fn run_project(project: &projects::Project) {
         Command::new(binary)
             .args(args)
             .status()
+            .await
             .expect(format!("Failed to execute {}", target_release).as_str())
     } else {
         panic!("Empty command string")
     };
-    
-    let elapsed = start_time.elapsed();
-    let elapsed_seconds = elapsed.as_secs_f64();
+
+    let command_elapsed = command_start_time.elapsed();
+    let command_elapsed_seconds = command_elapsed.as_secs_f64();
     println!(
         "  - Task | {} | {}.",
         target_release,
@@ -129,7 +135,16 @@ fn run_project(project: &projects::Project) {
     );
 
     println!();
-    println!("[TIP] + Run the project in {:.2}s.", elapsed_seconds);
+    println!(
+        "[TIP] + Run the project in {:.2}s.",
+        command_elapsed_seconds
+    );
+
+    // Calculate and display total elapsed time for all tasks
+    let overall_elapsed = overall_start_time.elapsed();
+    let overall_elapsed_seconds = overall_elapsed.as_secs_f64();
+    println!("[TIP] + Done the tasks in {:.2}s.", overall_elapsed_seconds);
+
     println!("[TIP] + [Task End]");
     println!();
 }

@@ -1,8 +1,9 @@
 use crate::projects;
 use std::fs::metadata;
-use std::process::Command;
+use std::time::Instant;
+use tokio::process::Command;
 
-pub fn run() {
+pub async fn run() {
     println!();
 
     // Get project information
@@ -18,7 +19,7 @@ pub fn run() {
             println!();
             return;
         }
-        run_project(&project);
+        run_project(&project).await;
     } else if project.is_uv_project {
         println!("[TIP] + The `dash` command is not supported for `uv` projects.");
         println!("[TIP] + Please use `lox run` or `lox build`.");
@@ -31,8 +32,11 @@ pub fn run() {
     }
 }
 
-fn run_project(project: &projects::Project) {
+async fn run_project(project: &projects::Project) {
     let target_debug = &project.run_commands.dev;
+
+    // Start timer for all tasks
+    let overall_start_time = Instant::now();
 
     // Only check target directory for Rust/Cargo projects
     if project.is_rust_project {
@@ -54,6 +58,7 @@ fn run_project(project: &projects::Project) {
                         .arg("--")
                         .arg("dev")
                         .status()
+                        .await
                         .expect("Failed to execute lox dev");
                     println!(
                         "  - Task | lox dev | {}.",
@@ -79,6 +84,7 @@ fn run_project(project: &projects::Project) {
                     .arg("--")
                     .arg("dev")
                     .status()
+                    .await
                     .expect("Failed to execute lox dev");
                 println!(
                     "  - Task | lox dev | {}.",
@@ -96,9 +102,10 @@ fn run_project(project: &projects::Project) {
 
     println!("[2/2] + Run the project.");
 
-    // Run the debug command
+    // Run the debug command and measure its time
     println!("  - Task | {} | ", target_debug);
-    
+    let command_start_time = Instant::now();
+
     // Split command into binary and arguments for proper execution
     let mut parts = target_debug.split_whitespace();
     let run_status = if let Some(binary) = parts.next() {
@@ -106,11 +113,15 @@ fn run_project(project: &projects::Project) {
         Command::new(binary)
             .args(args)
             .status()
+            .await
             .expect(format!("Failed to execute {}", target_debug).as_str())
     } else {
         panic!("Empty command string")
     };
-    
+
+    let command_elapsed = command_start_time.elapsed();
+    let command_elapsed_seconds = command_elapsed.as_secs_f64();
+
     println!(
         "  - Task | {} | {}.",
         target_debug,
@@ -122,7 +133,16 @@ fn run_project(project: &projects::Project) {
     );
 
     println!();
-    println!("[TIP] + Run the project in 0.56s.");
+    println!(
+        "[TIP] + Run the project in {:.2}s.",
+        command_elapsed_seconds
+    );
+
+    // Calculate and display total elapsed time for all tasks
+    let overall_elapsed = overall_start_time.elapsed();
+    let overall_elapsed_seconds = overall_elapsed.as_secs_f64();
+    println!("[TIP] + Done the tasks in {:.2}s.", overall_elapsed_seconds);
+
     println!("[TIP] + [Task End]");
     println!();
 }

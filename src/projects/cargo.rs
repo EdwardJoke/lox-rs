@@ -1,5 +1,5 @@
+use super::{BuildCommands, Project, RunCommands};
 use std::fs::{metadata, read_to_string};
-use super::{Project, BuildCommands, RunCommands};
 
 pub fn detect_cargo_project() -> Option<Project> {
     // Check if it's a Rust project (has Cargo.toml)

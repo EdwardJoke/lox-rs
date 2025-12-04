@@ -1,10 +1,14 @@
 use crate::projects;
 use std::env;
 use std::fs::write;
-use std::process::Command;
+use std::time::Instant;
+use tokio::process::Command;
 
-pub fn run() {
+pub async fn run() {
     println!();
+
+    // Start timer for all tasks
+    let start_time = Instant::now();
 
     // Check if this is the first run by looking for the config file
     let is_first_run = !std::fs::metadata("lox.toml").is_ok();
@@ -80,6 +84,7 @@ pub fn run() {
         let rustc_output = Command::new("rustc")
             .arg("--version")
             .output()
+            .await
             .expect("Failed to execute rustc command");
         let rustc_version_str = String::from_utf8_lossy(&rustc_output.stdout);
         let rustc_version = rustc_version_str
@@ -93,6 +98,7 @@ pub fn run() {
         let cargo_output = Command::new("cargo")
             .arg("--version")
             .output()
+            .await
             .expect("Failed to execute cargo command");
         let cargo_version_str = String::from_utf8_lossy(&cargo_output.stdout);
         let cargo_version = cargo_version_str
@@ -114,7 +120,7 @@ pub fn run() {
     let mut uv_version = "unknown".to_string();
     if project.is_uv_project {
         // Get uv version
-        if let Ok(uv_output) = Command::new("uv").arg("--version").output() {
+        if let Ok(uv_output) = Command::new("uv").arg("--version").output().await {
             let uv_version_str = String::from_utf8_lossy(&uv_output.stdout);
             uv_version = uv_version_str
                 .trim()
@@ -210,6 +216,12 @@ pub fn run() {
     }
 
     println!("[TIP] + Everything is Up-to-date.");
+
+    // Calculate and display total elapsed time
+    let elapsed = start_time.elapsed();
+    let elapsed_seconds = elapsed.as_secs_f64();
+    println!("[TIP] + Done the tasks in {:.2}s.", elapsed_seconds);
+
     println!("[TIP] + [Task End]");
     println!();
 }

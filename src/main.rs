@@ -25,14 +25,15 @@ enum Commands {
     Run,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = Args::parse();
 
     match args.command {
-        Commands::Doctor => commands::doctor::run(),
-        Commands::Dev => commands::dev::run(),
-        Commands::Build => commands::build::run(),
-        Commands::Dash => commands::dash::run(),
-        Commands::Run => commands::run::run(),
+        Commands::Doctor => commands::doctor::run().await,
+        Commands::Dev => commands::dev::run().await,
+        Commands::Build => commands::build::run().await,
+        Commands::Dash => commands::dash::run().await,
+        Commands::Run => commands::run::run().await,
     }
 }
