@@ -22,6 +22,3 @@ lox build
 The output files are in the `dist` directory with two files:
 - `uv-example-0.1.0.tar.gz`
 - `uv-example-0.1.0-py3-none-any.whl`
-
-## Anaconda | Planned
-Still in planning.
