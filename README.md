@@ -42,23 +42,6 @@ lox --help
 - Smart build checking (only builds when needed)
 - Comprehensive environment information
 
-## Project Structure
-
-```
-lox-rs/
-├── src/
-│   ├── main.rs          # Main CLI entry point
-│   └── commands/        # Command implementations
-│       ├── mod.rs       # Command module exports
-│       ├── doctor.rs    # doctor command implementation
-│       ├── dev.rs       # dev command implementation
-│       ├── build.rs     # build command implementation
-│       ├── dash.rs      # dash command implementation
-│       └── run.rs       # run command implementation
-├── Cargo.toml           # Project configuration
-└── README.md            # This file
-```
-
 ## Q&A
 
 - **Q: I am using the official pip as my environment configuration tool/package manager. Am I unable to use this tool?**
