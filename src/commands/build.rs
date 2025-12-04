@@ -1,19 +1,14 @@
-use std::fs::metadata;
+use crate::project;
 use std::process::Command;
 
 pub fn run() {
     println!();
 
-    // Check if it's a Rust project (has Cargo.toml)
-    let is_rust_project = metadata("cargo.toml").is_ok();
+    // Get project information
+    let project = project::get_or_create_project();
 
-    // Check if it's a Python project (has pyproject.toml)
-    let is_uv_project = metadata("pyproject.toml").is_ok();
-
-    if is_rust_project {
-        build_rust_project();
-    } else if is_uv_project {
-        build_uv_project();
+    if project.is_rust_project || project.is_uv_project {
+        build_project(&project);
     } else {
         println!("[TIP] + Unknown project type. No build configuration found.");
         println!("[TIP] + [Task End]");
@@ -21,7 +16,15 @@ pub fn run() {
     }
 }
 
-fn build_rust_project() {
+fn build_project(project: &project::Project) {
+    if project.is_rust_project {
+        build_rust_project(project);
+    } else if project.is_uv_project {
+        build_uv_project(project);
+    }
+}
+
+fn build_rust_project(project: &project::Project) {
     println!("[TIP] + Build for Release.");
     println!();
     println!("[1/3] + Download dependencies");
@@ -78,14 +81,15 @@ fn build_rust_project() {
     println!("[3/3] + Build the project");
 
     // Run cargo build --release
-    println!("  - Task | cargo build --release | ");
+    println!("  - Task | {} | ", project.build_commands.release);
     let build_status = Command::new("cargo")
         .arg("build")
         .arg("--release")
         .status()
         .expect("Failed to execute cargo build --release");
     println!(
-        "  - Task | cargo build --release | {}.",
+        "  - Task | {} | {}.",
+        project.build_commands.release,
         if build_status.success() {
             "Done"
         } else {
@@ -99,7 +103,7 @@ fn build_rust_project() {
     println!();
 }
 
-fn build_uv_project() {
+fn build_uv_project(project: &project::Project) {
     println!("[TIP] + Build the project.");
     println!();
     println!("[1/3] + Lock the project dependencies");
@@ -158,13 +162,14 @@ fn build_uv_project() {
     println!("[3/3] + Build the project");
 
     // Run uv build
-    println!("  - Task | uv build        | ");
+    println!("  - Task | {} | ", project.build_commands.release);
     let build_status = Command::new("uv")
         .arg("build")
         .status()
         .expect("Failed to execute uv build");
     println!(
-        "  - Task | uv build        | {}.",
+        "  - Task | {} | {}.",
+        project.build_commands.release,
         if build_status.success() {
             "Done"
         } else {

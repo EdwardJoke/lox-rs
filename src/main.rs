@@ -1,4 +1,5 @@
 mod commands;
+mod project;
 
 use clap::Parser;
 

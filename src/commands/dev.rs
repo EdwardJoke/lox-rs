@@ -1,7 +1,22 @@
+use crate::project;
 use std::process::Command;
 
 pub fn run() {
     println!();
+
+    // Get project information
+    let project = project::get_or_create_project();
+
+    if project.is_rust_project {
+        build_dev_rust_project(&project);
+    } else {
+        println!("[TIP] + Unknown project type. No dev configuration found.");
+        println!("[TIP] + [Task End]");
+        println!();
+    }
+}
+
+fn build_dev_rust_project(project: &project::Project) {
     println!("[TIP] + Build for Dev.");
     println!();
     println!("[1/3] + Download dependencies");
@@ -58,13 +73,14 @@ pub fn run() {
     println!("[3/3] + Build the project");
 
     // Run cargo build
-    println!("  - Task | cargo build  | ");
+    println!("  - Task | {} | ", project.build_commands.dev);
     let build_status = Command::new("cargo")
         .arg("build")
         .status()
         .expect("Failed to execute cargo build");
     println!(
-        "  - Task | cargo build  | {}.",
+        "  - Task | {} | {}.",
+        project.build_commands.dev,
         if build_status.success() {
             "Done"
         } else {

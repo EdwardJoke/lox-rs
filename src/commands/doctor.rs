@@ -1,5 +1,6 @@
+use crate::project;
 use std::env;
-use std::fs::{read_to_string, write};
+use std::fs::write;
 use std::process::Command;
 
 pub fn run() {
@@ -15,101 +16,43 @@ pub fn run() {
     println!();
     println!("[1/2] + Project informations");
 
-    // Parse project information
-    let mut project_type = String::from("unknown");
-    let mut project_name = String::from("unknown");
-    let mut project_version = String::from("unknown");
-
-    // Check if it's a Rust project (has Cargo.toml)
-    let is_rust_project = std::fs::metadata("Cargo.toml").is_ok();
-
-    // Check if it's a Python project (has pyproject.toml)
-    let is_uv_project = std::fs::metadata("pyproject.toml").is_ok();
-
-    // Parse Cargo.toml if it's a Rust project
-    if is_rust_project {
-        if let Ok(cargo_content) = read_to_string("Cargo.toml") {
-            for line in cargo_content.lines() {
-                if line.starts_with("name = ") {
-                    if let Some((_, rest)) = line.split_once('"') {
-                        if let Some((name, _)) = rest.split_once('"') {
-                            project_name = name.to_string();
-                        }
-                    }
-                } else if line.starts_with("version = ") {
-                    if let Some((_, rest)) = line.split_once('"') {
-                        if let Some((version, _)) = rest.split_once('"') {
-                            project_version = version.to_string();
-                        }
-                    }
-                } else if line.starts_with("[lib]") {
-                    project_type = String::from("library(lib)");
-                } else if line.starts_with("[[bin]]") {
-                    project_type = String::from("app(bin)");
-                }
-            }
-        }
-
-        // If no explicit type found, default to binary if there's a main.rs
-        if project_type == "unknown" {
-            project_type = if std::fs::metadata("src/main.rs").is_ok() {
-                String::from("app(bin)")
-            } else if std::fs::metadata("src/lib.rs").is_ok() {
-                String::from("library(lib)")
-            } else {
-                String::from("unknown")
-            };
-        }
-    }
-
-    // Parse pyproject.toml if it's a Python project
-    if is_uv_project {
-        project_type = String::from("uv");
-
-        if let Ok(pyproject_content) = read_to_string("pyproject.toml") {
-            for line in pyproject_content.lines() {
-                if line.starts_with("name = ") {
-                    if let Some((_, rest)) = line.split_once('"') {
-                        if let Some((name, _)) = rest.split_once('"') {
-                            project_name = name.to_string();
-                        }
-                    }
-                } else if line.starts_with("version = ") {
-                    if let Some((_, rest)) = line.split_once('"') {
-                        if let Some((version, _)) = rest.split_once('"') {
-                            project_version = version.to_string();
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // Get project information from the shared module
+    let project = project::detect_project_info();
 
     // Display project type with conditional suffix
-    if is_rust_project {
-        println!("  - Project type:           {} (rust)", project_type);
-    } else if is_uv_project {
-        println!("  - Project type:           {} (python)", project_type);
+    if project.is_rust_project {
+        println!(
+            "  - Project type:           {} (rust)",
+            project.project_type
+        );
+    } else if project.is_uv_project {
+        println!(
+            "  - Project type:           {} (python)",
+            project.project_type
+        );
     } else {
-        println!("  - Project type:           {}", project_type);
+        println!("  - Project type:           {}", project.project_type);
     }
-    println!("  - Project name:           {}", project_name);
-    println!("  - Project version:        {}", project_version);
+    println!("  - Project name:           {}", project.name);
+    println!("  - Project version:        {}", project.version);
 
     // Display project virtual env for Python projects
-    if is_uv_project {
+    if project.is_uv_project {
         println!("  - Project virtual env:    unknown");
     }
 
     // Display project commands based on project type
-    if is_rust_project {
-        println!("  - Project build(dev):     cargo build");
-        println!("  - Project build(release): cargo build --release");
+    if project.is_rust_project {
+        println!("  - Project build(dev):     {}", project.build_commands.dev);
+        println!(
+            "  - Project build(release): {}",
+            project.build_commands.release
+        );
         println!("  - Project fmt:            cargo fmt");
         println!("  - Project lint:           cargo check");
         println!("  - Project dependency:     cargo update");
-    } else if is_uv_project {
-        println!("  - Project build:          uv build");
+    } else if project.is_uv_project {
+        println!("  - Project build:          {}", project.build_commands.dev);
         println!("  - Project fmt:            uvx ruff format");
         println!("  - Project lint:           uvx ruff check");
         println!("  - Project dependency:     uv update");
@@ -126,13 +69,13 @@ pub fn run() {
     // Get OS information
     let os = env::consts::OS;
     let arch = env::consts::ARCH;
-    let formatted_os = format_os_name(os);
+    let formatted_os = project::format_os_name(os);
 
     println!("  - Operating system:      {}", formatted_os);
     println!("  - CPU architecture:      {}", arch);
 
     // Get Rust-specific information for Rust projects
-    let (rustc_version, cargo_version) = if is_rust_project {
+    let (rustc_version, cargo_version) = if project.is_rust_project {
         // Get RustC version
         let rustc_output = Command::new("rustc")
             .arg("--version")
@@ -169,7 +112,7 @@ pub fn run() {
 
     // Get Python-specific information for Python projects
     let mut uv_version = "unknown".to_string();
-    if is_uv_project {
+    if project.is_uv_project {
         // Get uv version
         if let Ok(uv_output) = Command::new("uv").arg("--version").output() {
             let uv_version_str = String::from_utf8_lossy(&uv_output.stdout);
@@ -189,21 +132,45 @@ pub fn run() {
     if is_first_run {
         // Create TOML content for project configuration
         let mut toml_content = format!(
-            "\n[project]\ntype = \"{}\"\nname = \"{}\"\nversion = \"{}\"\n",
-            project_type, project_name, project_version
+            "[project]\ntype = \"{}\"\nname = \"{}\"\nversion = \"{}\"\n",
+            project.project_type, project.name, project.version
         );
 
         // Add Rust-specific build commands if it's a Rust project
-        if is_rust_project {
+        if project.is_rust_project {
             toml_content.push_str(
-                "\n[project.build]\ndev = \"cargo build\"\nrelease = \"cargo build --release\"\n",
+                format!(
+                    "\n[project.build]\ndev = \"{}\"\nrelease = \"{}\"\n",
+                    project.build_commands.dev, project.build_commands.release
+                )
+                .as_str(),
+            );
+            toml_content.push_str(
+                format!(
+                    "\n[project.run]\ndev = \"{}\"\nrelease = \"{}\"\n",
+                    project.run_commands.dev, project.run_commands.release
+                )
+                .as_str(),
             );
             toml_content.push_str("\n[project.commands]\nfmt = \"cargo fmt\"\nlint = \"cargo check\"\ndependency = \"cargo update\"\n");
             toml_content.push_str(format!("\n[environment]\nos = \"{}\"\narch = \"{}\"\nrustc_version = \"{}\"\ncargo_version = \"{}\"\n",
                 formatted_os, arch, rustc_version, cargo_version).as_str());
-        } else if is_uv_project {
+        } else if project.is_uv_project {
             // Add Python-specific commands for Python projects
-            toml_content.push_str("\n[project.build]\nrelease = \"uv build\"\n");
+            toml_content.push_str(
+                format!(
+                    "\n[project.build]\ndev = \"{}\"\nrelease = \"{}\"\n",
+                    project.build_commands.dev, project.build_commands.release
+                )
+                .as_str(),
+            );
+            toml_content.push_str(
+                format!(
+                    "\n[project.run]\ndev = \"{}\"\nrelease = \"{}\"\n",
+                    project.run_commands.dev, project.run_commands.release
+                )
+                .as_str(),
+            );
             toml_content.push_str("\n[project.commands]\nfmt = \"uvx ruff format\"\nlint = \"uvx ruff check\"\ndependency = \"uv update\"\n");
             toml_content.push_str(
                 format!(
@@ -214,7 +181,13 @@ pub fn run() {
             );
         } else {
             // Default for other project types
-            toml_content.push_str("\n[project.build]\ndev = \"unknown\"\nrelease = \"unknown\"\n");
+            toml_content.push_str(
+                format!(
+                    "\n[project.build]\ndev = \"{}\"\nrelease = \"{}\"\n",
+                    project.build_commands.dev, project.build_commands.release
+                )
+                .as_str(),
+            );
             toml_content.push_str("\n[project.commands]\nfmt = \"unknown\"\nlint = \"unknown\"\ndependency = \"unknown\"\n");
             toml_content.push_str(
                 format!(
@@ -239,13 +212,4 @@ pub fn run() {
     println!("[TIP] + Everything is Up-to-date.");
     println!("[TIP] + [Task End]");
     println!();
-}
-
-fn format_os_name(os: &str) -> String {
-    match os {
-        "macos" => "macOS".to_string(),
-        "linux" => "Linux".to_string(),
-        "windows" => "Windows".to_string(),
-        _ => os.to_string(),
-    }
 }
