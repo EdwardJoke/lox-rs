@@ -1,14 +1,10 @@
 // Re-export the task system API for external use
 
-// Task trait and basic types
-pub use self::task::Task;
-
 // Public API functions
-pub use self::task::{execute_tasks, execute_task_by_id, get_task_ids_for_command};
+pub use self::task::execute_task_by_id;
 
 // Re-export task IDs for easy access
 pub const UV_LOCK: &str = "uv_lock";
-pub const UV_RUN: &str = "uv_run";
 pub const UV_BUILD: &str = "uv_build";
 pub const UV_RUFF_CHECK: &str = "uv_ruff_check";
 pub const UV_RUFF_FORMAT: &str = "uv_ruff_format";

@@ -24,7 +24,7 @@ fn build_project(project: &projects::Project) {
     }
 }
 
-fn build_rust_project(project: &projects::Project) {
+fn build_rust_project(_project: &projects::Project) {
     println!("[TIP] + Build for Release.");
     println!();
     println!("[1/3] + Download dependencies");
@@ -47,7 +47,7 @@ fn build_rust_project(project: &projects::Project) {
     println!();
 }
 
-fn build_uv_project(project: &projects::Project) {
+fn build_uv_project(_project: &projects::Project) {
     println!("[TIP] + Build the project.");
     println!();
     println!("[1/3] + Lock the project dependencies");

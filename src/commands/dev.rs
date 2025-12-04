@@ -21,7 +21,7 @@ pub fn run() {
     }
 }
 
-fn build_dev_rust_project(project: &projects::Project) {
+fn build_dev_rust_project(_project: &projects::Project) {
     println!("[TIP] + Build for Dev.");
     println!();
     println!("[1/3] + Download dependencies");

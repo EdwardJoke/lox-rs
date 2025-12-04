@@ -1,7 +1,7 @@
 use std::process::Command;
 
 // Define a Task struct that encapsulates task logic
-pub trait Task {
+trait Task {
     // Get the unique task ID
     fn id(&self) -> &str;
     
@@ -195,36 +195,9 @@ impl TaskRegistry {
             false
         }
     }
-    
-    fn execute_tasks(&self, task_ids: &[&str]) -> bool {
-        task_ids.iter().all(|&id| self.execute_task_by_id(id))
-    }
-}
-
-// Command to task ID mappings
-pub fn get_task_ids_for_command(command: &str, is_uv_project: bool) -> Vec<&'static str> {
-    match (command, is_uv_project) {
-        // UV project commands
-        ("run", true) => vec!["uv_lock", "uv_run"],
-        ("build", true) => vec!["uv_lock", "uv_ruff_check", "uv_ruff_format", "uv_build"],
-        
-        // Cargo project commands
-        ("dev", false) => vec!["cargo_update", "cargo_fmt", "cargo_check", "cargo_build"],
-        ("build", false) => vec!["cargo_update", "cargo_fmt", "cargo_check", "cargo_build_release"],
-        ("run", false) => vec![], // Run command for cargo has special logic before executing binary
-        ("dash", false) => vec![], // Dash command for cargo has special logic before executing binary
-        
-        // Default case
-        _ => vec![]
-    }
 }
 
 // Public API for the task system
-pub fn execute_tasks(task_ids: &[&str]) -> bool {
-    let registry = TaskRegistry::new();
-    registry.execute_tasks(task_ids)
-}
-
 pub fn execute_task_by_id(task_id: &str) -> bool {
     let registry = TaskRegistry::new();
     registry.execute_task_by_id(task_id)
