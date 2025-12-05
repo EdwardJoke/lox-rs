@@ -1,6 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
 use tokio::process::Command;
+use std::io::{stdin, stdout, Write};
 
 // Define a type alias for our async task function
 pub type TaskFn = dyn Fn() -> Pin<Box<dyn Future<Output = bool>>> + Send + Sync;
@@ -54,48 +55,124 @@ impl Task {
     }
 }
 
+// Helper functions for UV installation
+
+// Check if UV is installed
+async fn is_uv_installed() -> bool {
+    Command::new("uv")
+        .arg("--version")
+        .status()
+        .await
+        .is_ok()
+}
+
+// Install UV based on the operating system
+async fn install_uv() -> bool {
+    println!("[TIP] + Seems like you didn't install `uv` yet.");
+    println!("[TIP] + Do you want to install `uv` now? (Y/n) >> ");
+    
+    // Flush stdout to ensure the prompt is displayed immediately
+    stdout().flush().expect("Failed to flush stdout");
+    
+    // Read user input
+    let mut input = String::new();
+    stdin().read_line(&mut input).expect("Failed to read input");
+    
+    let input = input.trim().to_lowercase();
+    if input != "y" && input != "yes" && !input.is_empty() {
+        println!("[TIP] + Installation canceled by user.");
+        return false;
+    }
+    
+    // Determine OS and install UV
+    let os = std::env::consts::OS;
+    match os {
+        "macos" | "linux" => {
+            println!("  - Task | curl -LsSf https://astral.sh/uv/install.sh | sh | ");
+            let status = Command::new("sh")
+                .arg("-c")
+                .arg("curl -LsSf https://astral.sh/uv/install.sh | sh")
+                .status()
+                .await
+                .expect("Failed to execute UV installation script");
+            println!("  - Task | curl -LsSf https://astral.sh/uv/install.sh | sh | Done.");
+            status.success()
+        },
+        "windows" => {
+            println!("  - Task | powershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\" | ");
+            let status = Command::new("powershell")
+                .arg("-ExecutionPolicy")
+                .arg("ByPass")
+                .arg("-c")
+                .arg("irm https://astral.sh/uv/install.ps1 | iex")
+                .status()
+                .await
+                .expect("Failed to execute UV installation script");
+            println!("  - Task | powershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\" | Done.");
+            status.success()
+        },
+        _ => {
+            eprintln!("[ERROR] + Unsupported operating system for UV installation.");
+            false
+        }
+    }
+}
+
+// Execute UV command with installation check
+async fn execute_uv_command(args: &[&str]) -> bool {
+    // Check if UV is installed
+    if !is_uv_installed().await {
+        // Install UV if not installed
+        if !install_uv().await {
+            return false;
+        }
+        println!("[TIP] + `uv` already installed, please restart the terminal.");
+        return false;
+    }
+    
+    // Execute the UV command
+    Command::new("uv")
+        .args(args)
+        .status()
+        .await
+        .expect("Failed to execute UV command")
+        .success()
+}
+
 // Concrete task factories
 
 // Create a UV lock task
 fn create_uv_lock_task() -> Task {
     Task::new("uv_lock", "uv lock", || async {
-        Command::new("uv")
-            .arg("lock")
-            .status()
-            .await
-            .expect("Failed to execute uv lock")
-            .success()
+        execute_uv_command(&["lock"]).await
     })
 }
 
 // Create a UV run task
 fn create_uv_run_task() -> Task {
     Task::new("uv_run", "uv run main.py", || async {
-        Command::new("uv")
-            .arg("run")
-            .arg("main.py")
-            .status()
-            .await
-            .expect("Failed to execute uv run main.py")
-            .success()
+        execute_uv_command(&["run", "main.py"]).await
     })
 }
 
 // Create a UV build task
 fn create_uv_build_task() -> Task {
     Task::new("uv_build", "uv build", || async {
-        Command::new("uv")
-            .arg("build")
-            .status()
-            .await
-            .expect("Failed to execute uv build")
-            .success()
+        execute_uv_command(&["build"]).await
     })
 }
 
 // Create a UV ruff check task
 fn create_uv_ruff_check_task() -> Task {
     Task::new("uv_ruff_check", "uvx ruff check", || async {
+        // Check if UV is installed first, since uvx is part of UV
+        if !is_uv_installed().await {
+            if !install_uv().await {
+                return false;
+            }
+            println!("[TIP] + `uv` already installed, please restart the terminal.");
+            return false;
+        }
         Command::new("uvx")
             .arg("ruff")
             .arg("check")
@@ -109,6 +186,14 @@ fn create_uv_ruff_check_task() -> Task {
 // Create a UV ruff format task
 fn create_uv_ruff_format_task() -> Task {
     Task::new("uv_ruff_format", "uvx ruff format", || async {
+        // Check if UV is installed first, since uvx is part of UV
+        if !is_uv_installed().await {
+            if !install_uv().await {
+                return false;
+            }
+            println!("[TIP] + `uv` already installed, please restart the terminal.");
+            return false;
+        }
         Command::new("uvx")
             .arg("ruff")
             .arg("format")

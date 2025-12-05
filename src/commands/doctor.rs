@@ -52,15 +52,24 @@ pub async fn run(quiet: bool) {
     // Get Python-specific information for Python projects
     let mut uv_version = "unknown".to_string();
     if project.is_uv_project {
-        // Get uv version
-        if let Ok(uv_output) = Command::new("uv").arg("--version").output().await {
-            let uv_version_str = String::from_utf8_lossy(&uv_output.stdout);
-            uv_version = uv_version_str
-                .trim()
-                .split_whitespace()
-                .nth(1)
-                .unwrap_or("unknown")
-                .to_string();
+        // Check if UV is installed first
+        let uv_installed = tokio::process::Command::new("uv")
+            .arg("--version")
+            .status()
+            .await
+            .is_ok();
+        
+        if uv_installed {
+            // Get uv version if installed
+            if let Ok(uv_output) = Command::new("uv").arg("--version").output().await {
+                let uv_version_str = String::from_utf8_lossy(&uv_output.stdout);
+                uv_version = uv_version_str
+                    .trim()
+                    .split_whitespace()
+                    .nth(1)
+                    .unwrap_or("unknown")
+                    .to_string();
+            }
         }
     }
 
