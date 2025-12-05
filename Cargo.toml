@@ -6,3 +6,6 @@ edition = "2024"
 [dependencies]
 clap = { version = "4.5.0", features = ["derive"] }
 tokio = { version = "1.37.0", features = ["full"] }
+
+[profile.release]
+lto = true
