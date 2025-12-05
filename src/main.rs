@@ -14,7 +14,11 @@ struct Args {
 #[derive(clap::Subcommand, Debug)]
 enum Commands {
     /// Check the project informations and the environment
-    Doctor,
+    Doctor {
+        /// Run the command quietly
+        #[arg(short = 'q', long = "quiet")]
+        quiet: bool,
+    },
     /// Build the project in development mode
     Dev,
     /// Build the project in release mode
@@ -30,7 +34,7 @@ async fn main() {
     let args = Args::parse();
 
     match args.command {
-        Commands::Doctor => commands::doctor::run().await,
+        Commands::Doctor { quiet } => commands::doctor::run(quiet).await,
         Commands::Dev => commands::dev::run().await,
         Commands::Build => commands::build::run().await,
         Commands::Dash => commands::dash::run().await,
