@@ -10,7 +10,7 @@ pub async fn run() {
     // Get project information
     let project = projects::get_or_create_project();
 
-    if project.is_rust_project || project.is_uv_project {
+    if project.is_rust_project || project.is_uv_project || project.is_fortran_project {
         // Check if it's a library project
         if project.is_library {
             println!(
@@ -34,8 +34,8 @@ async fn run_project(project: &projects::Project) {
     // Start timer for all tasks
     let overall_start_time = Instant::now();
 
-    // Only check target directory for Rust/Cargo projects
-    if project.is_rust_project {
+    // Check if binary exists for Rust or Fortran projects
+    if project.is_rust_project || project.is_fortran_project {
         // Check if target directory exists
         let target_dir = "./target";
 
@@ -47,7 +47,7 @@ async fn run_project(project: &projects::Project) {
                     println!();
                     println!("[1/2] + Build the project first.");
 
-                    // Run lox build
+                    // Run lox build using cargo run
                     println!("  - Task | lox build | ");
                     let build_status = Command::new("cargo")
                         .arg("run")
@@ -75,9 +75,7 @@ async fn run_project(project: &projects::Project) {
 
                 // Run lox build
                 println!("  - Task | lox build | ");
-                let build_status = Command::new("cargo")
-                    .arg("run")
-                    .arg("--")
+                let build_status = Command::new("lox")
                     .arg("build")
                     .status()
                     .await

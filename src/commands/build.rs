@@ -8,7 +8,7 @@ pub async fn run() {
     // Get project information
     let project = projects::get_or_create_project();
 
-    if project.is_rust_project || project.is_uv_project {
+    if project.is_rust_project || project.is_uv_project || project.is_fortran_project {
         build_project(&project).await;
     } else {
         println!("[TIP] + Unknown project type. No build configuration found.");
@@ -22,6 +22,8 @@ async fn build_project(project: &projects::Project) {
         build_rust_project(project).await;
     } else if project.is_uv_project {
         build_uv_project(project).await;
+    } else if project.is_fortran_project {
+        build_fortran_project(project).await;
     }
 }
 
@@ -61,10 +63,10 @@ async fn build_rust_project(_project: &projects::Project) {
 async fn build_uv_project(_project: &projects::Project) {
     println!("[TIP] + Build the project.");
     println!();
-
+    
     // Start timer for all tasks
     let start_time = Instant::now();
-
+    
     println!("[1/3] + Lock the project dependencies");
 
     // Execute tasks using the new task system
@@ -81,12 +83,48 @@ async fn build_uv_project(_project: &projects::Project) {
 
     println!();
     println!("[TIP] + Build at + `dist` .");
-
+    
     // Calculate and display total elapsed time
     let elapsed = start_time.elapsed();
     let elapsed_seconds = elapsed.as_secs_f64();
     println!("[TIP] + Done the tasks in {:.2}s.", elapsed_seconds);
+    
+    println!("[TIP] + [Task End]");
+    println!();
+}
 
+async fn build_fortran_project(project: &projects::Project) {
+    println!("[TIP] + Build for Release.");
+    println!();
+    
+    // Start timer for all tasks
+    let start_time = Instant::now();
+    
+    // Create target directories if they don't exist
+    std::fs::create_dir_all("./target/dev").expect("Failed to create target/dev directory");
+    std::fs::create_dir_all("./target/release").expect("Failed to create target/release directory");
+    
+    println!("[1/1] + Build the project");
+    println!("  - Task | {} | ", project.build_commands.release);
+    
+    // Execute the build command using the shell since it may contain shell operators
+    let status = tokio::process::Command::new("sh")
+        .arg("-c")
+        .arg(&project.build_commands.release)
+        .status()
+        .await
+        .expect("Failed to execute build command");
+    
+    println!("  - Task | {} | {}.", project.build_commands.release, if status.success() { "Done" } else { "Failed" });
+
+    println!();
+    println!("[TIP] + Build at + `target` .");
+    
+    // Calculate and display total elapsed time
+    let elapsed = start_time.elapsed();
+    let elapsed_seconds = elapsed.as_secs_f64();
+    println!("[TIP] + Done the tasks in {:.2}s.", elapsed_seconds);
+    
     println!("[TIP] + [Task End]");
     println!();
 }

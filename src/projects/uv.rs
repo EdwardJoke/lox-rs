@@ -51,5 +51,6 @@ pub fn detect_uv_project() -> Option<Project> {
         run_commands,
         is_rust_project: false,
         is_uv_project: true,
+        is_fortran_project: false,
     })
 }

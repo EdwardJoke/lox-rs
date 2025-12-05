@@ -9,7 +9,7 @@ pub async fn run() {
     // Get project information
     let project = projects::get_or_create_project();
 
-    if project.is_rust_project {
+    if project.is_rust_project || project.is_fortran_project {
         // Check if it's a library project
         if project.is_library {
             println!(
@@ -38,8 +38,8 @@ async fn run_project(project: &projects::Project) {
     // Start timer for all tasks
     let overall_start_time = Instant::now();
 
-    // Only check target directory for Rust/Cargo projects
-    if project.is_rust_project {
+    // Check if binary exists for Rust or Fortran projects
+    if project.is_rust_project || project.is_fortran_project {
         // Check if target directory exists
         let target_dir = "./target";
 

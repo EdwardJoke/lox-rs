@@ -10,6 +10,7 @@ pub struct Project {
     pub run_commands: RunCommands,
     pub is_rust_project: bool,
     pub is_uv_project: bool,
+    pub is_fortran_project: bool,
 }
 
 #[derive(Debug)]

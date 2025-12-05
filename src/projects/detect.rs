@@ -39,6 +39,7 @@ pub fn read_project_from_toml() -> Result<Project, String> {
     let mut run_release = String::from("unknown");
     let mut is_rust_project = false;
     let mut is_uv_project = false;
+    let mut is_fortran_project = false;
 
     let mut current_section = String::new();
 
@@ -64,12 +65,13 @@ pub fn read_project_from_toml() -> Result<Project, String> {
             match current_section.as_str() {
                 "project" => match key {
                     "type" => {
-                        project_type = value.to_string();
-                        is_library = project_type.contains("library");
-                        is_rust_project =
-                            project_type.contains("app") || project_type.contains("library");
-                        is_uv_project = project_type == "uv";
-                    }
+                    project_type = value.to_string();
+                    is_library = project_type.contains("library");
+                    is_rust_project =
+                        project_type.contains("app") || project_type.contains("library");
+                    is_uv_project = project_type == "uv";
+                    is_fortran_project = project_type == "llvm-f";
+                }
                     "name" => name = value.to_string(),
                     "version" => version = value.to_string(),
                     _ => {}
@@ -104,6 +106,7 @@ pub fn read_project_from_toml() -> Result<Project, String> {
         },
         is_rust_project,
         is_uv_project,
+        is_fortran_project,
     })
 }
 
@@ -134,5 +137,6 @@ pub fn detect_project_info() -> Project {
         },
         is_rust_project: false,
         is_uv_project: false,
+        is_fortran_project: false,
     }
 }

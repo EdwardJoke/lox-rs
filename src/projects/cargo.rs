@@ -76,5 +76,6 @@ pub fn detect_cargo_project() -> Option<Project> {
         run_commands,
         is_rust_project: true,
         is_uv_project: false,
+        is_fortran_project: false,
     })
 }
