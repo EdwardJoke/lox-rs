@@ -7,7 +7,7 @@ pub async fn run() {
     println!();
 
     // Get project information
-    let project = projects::get_or_create_project();
+    let project = projects::get_or_create_project().await;
 
     if project.is_rust_project || project.is_fortran_project {
         // Check if it's a library project

@@ -2,6 +2,7 @@ use crate::projects;
 use std::env;
 use std::fs::write;
 use std::time::Instant;
+use tokio::fs::metadata;
 use tokio::process::Command;
 
 pub async fn run(quiet: bool) {
@@ -9,10 +10,10 @@ pub async fn run(quiet: bool) {
     let start_time = Instant::now();
 
     // Check if this is the first run by looking for the config file
-    let is_first_run = !std::fs::metadata("lox.toml").is_ok();
+    let is_first_run = !metadata("lox.toml").await.is_ok();
 
     // Get project information from the shared module
-    let project = projects::detect_project_info();
+    let project = projects::detect_project_info().await;
 
     // Get Rust-specific information for Rust projects
     let (rustc_version, cargo_version) = if project.is_rust_project {
@@ -58,7 +59,7 @@ pub async fn run(quiet: bool) {
             .status()
             .await
             .is_ok();
-        
+
         if uv_installed {
             // Get uv version if installed
             if let Ok(uv_output) = Command::new("uv").arg("--version").output().await {
@@ -120,7 +121,9 @@ pub async fn run(quiet: bool) {
             toml_content.push_str(
                 format!(
                     "\n[environment]\nos = \"{}\"\narch = \"{}\"\nuv_version = \"{}\"\n",
-                    projects::format_os_name(env::consts::OS), env::consts::ARCH, uv_version
+                    projects::format_os_name(env::consts::OS),
+                    env::consts::ARCH,
+                    uv_version
                 )
                 .as_str(),
             );
@@ -137,7 +140,8 @@ pub async fn run(quiet: bool) {
             toml_content.push_str(
                 format!(
                     "\n[environment]\nos = \"{}\"\narch = \"{}\"\n",
-                    projects::format_os_name(env::consts::OS), env::consts::ARCH
+                    projects::format_os_name(env::consts::OS),
+                    env::consts::ARCH
                 )
                 .as_str(),
             );

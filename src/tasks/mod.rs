@@ -13,6 +13,8 @@ pub const CARGO_FMT: &str = "cargo_fmt";
 pub const CARGO_CHECK: &str = "cargo_check";
 pub const CARGO_BUILD: &str = "cargo_build";
 pub const CARGO_BUILD_RELEASE: &str = "cargo_build_release";
+pub const FLANG_BUILD_DEV: &str = "flang_build_dev";
+pub const FLANG_BUILD_RELEASE: &str = "flang_build_release";
 
 // Private module containing the implementation
 mod task;

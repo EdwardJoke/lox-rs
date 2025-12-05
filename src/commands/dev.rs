@@ -6,7 +6,7 @@ pub async fn run() {
     println!();
 
     // Get project information
-    let project = projects::get_or_create_project();
+    let project = projects::get_or_create_project().await;
 
     if project.is_rust_project {
         build_dev_rust_project(&project).await;
@@ -27,10 +27,10 @@ pub async fn run() {
 async fn build_dev_rust_project(_project: &projects::Project) {
     println!("[TIP] + Build for Dev.");
     println!();
-    
+
     // Start timer for all tasks
     let start_time = Instant::now();
-    
+
     println!("[1/3] + Download dependencies");
 
     // Execute tasks using the new task system
@@ -47,48 +47,36 @@ async fn build_dev_rust_project(_project: &projects::Project) {
 
     println!();
     println!("[TIP] + Build at + `target` .");
-    
+
     // Calculate and display total elapsed time
     let elapsed = start_time.elapsed();
     let elapsed_seconds = elapsed.as_secs_f64();
     println!("[TIP] + Done the tasks in {:.2}s.", elapsed_seconds);
-    
+
     println!("[TIP] + [Task End]");
     println!();
 }
 
-async fn build_dev_fortran_project(project: &projects::Project) {
+async fn build_dev_fortran_project(_project: &projects::Project) {
     println!("[TIP] + Build for Dev.");
     println!();
-    
+
     // Start timer for all tasks
     let start_time = Instant::now();
-    
-    // Create target directories if they don't exist
-    std::fs::create_dir_all("./target/dev").expect("Failed to create target/dev directory");
-    std::fs::create_dir_all("./target/release").expect("Failed to create target/release directory");
-    
+
     println!("[1/1] + Build the project");
-    println!("  - Task | {} | ", project.build_commands.dev);
-    
-    // Execute the build command using the shell since it may contain shell operators
-    let status = tokio::process::Command::new("sh")
-        .arg("-c")
-        .arg(&project.build_commands.dev)
-        .status()
-        .await
-        .expect("Failed to execute build command");
-    
-    println!("  - Task | {} | {}.", project.build_commands.dev, if status.success() { "Done" } else { "Failed" });
+
+    // Execute the Fortran dev build task using the task system
+    tasks::execute_task_by_id(tasks::FLANG_BUILD_DEV).await;
 
     println!();
     println!("[TIP] + Build at + `target` .");
-    
+
     // Calculate and display total elapsed time
     let elapsed = start_time.elapsed();
     let elapsed_seconds = elapsed.as_secs_f64();
     println!("[TIP] + Done the tasks in {:.2}s.", elapsed_seconds);
-    
+
     println!("[TIP] + [Task End]");
     println!();
 }

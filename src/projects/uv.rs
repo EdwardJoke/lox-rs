@@ -1,9 +1,9 @@
 use super::{BuildCommands, Project, RunCommands};
-use std::fs::{metadata, read_to_string};
+use tokio::fs::{metadata, read_to_string};
 
-pub fn detect_uv_project() -> Option<Project> {
+pub async fn detect_uv_project() -> Option<Project> {
     // Check if it's a Python project (has pyproject.toml)
-    if !metadata("pyproject.toml").is_ok() {
+    if !metadata("pyproject.toml").await.is_ok() {
         return None;
     }
 
@@ -12,7 +12,7 @@ pub fn detect_uv_project() -> Option<Project> {
     let mut project_version = String::from("unknown");
     let is_library = false;
 
-    if let Ok(pyproject_content) = read_to_string("pyproject.toml") {
+    if let Ok(pyproject_content) = read_to_string("pyproject.toml").await {
         for line in pyproject_content.lines() {
             if line.starts_with("name = ") {
                 if let Some((_, rest)) = line.split_once('"') {

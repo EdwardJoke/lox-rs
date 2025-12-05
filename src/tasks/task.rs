@@ -1,7 +1,7 @@
 use std::future::Future;
+use std::io::{Write, stdin, stdout};
 use std::pin::Pin;
 use tokio::process::Command;
-use std::io::{stdin, stdout, Write};
 
 // Define a type alias for our async task function
 pub type TaskFn = dyn Fn() -> Pin<Box<dyn Future<Output = bool>>> + Send + Sync;
@@ -59,31 +59,27 @@ impl Task {
 
 // Check if UV is installed
 async fn is_uv_installed() -> bool {
-    Command::new("uv")
-        .arg("--version")
-        .status()
-        .await
-        .is_ok()
+    Command::new("uv").arg("--version").status().await.is_ok()
 }
 
 // Install UV based on the operating system
 async fn install_uv() -> bool {
     println!("[TIP] + Seems like you didn't install `uv` yet.");
     println!("[TIP] + Do you want to install `uv` now? (Y/n) >> ");
-    
+
     // Flush stdout to ensure the prompt is displayed immediately
     stdout().flush().expect("Failed to flush stdout");
-    
+
     // Read user input
     let mut input = String::new();
     stdin().read_line(&mut input).expect("Failed to read input");
-    
+
     let input = input.trim().to_lowercase();
     if input != "y" && input != "yes" && !input.is_empty() {
         println!("[TIP] + Installation canceled by user.");
         return false;
     }
-    
+
     // Determine OS and install UV
     let os = std::env::consts::OS;
     match os {
@@ -97,9 +93,11 @@ async fn install_uv() -> bool {
                 .expect("Failed to execute UV installation script");
             println!("  - Task | curl -LsSf https://astral.sh/uv/install.sh | sh | Done.");
             status.success()
-        },
+        }
         "windows" => {
-            println!("  - Task | powershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\" | ");
+            println!(
+                "  - Task | powershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\" | "
+            );
             let status = Command::new("powershell")
                 .arg("-ExecutionPolicy")
                 .arg("ByPass")
@@ -108,9 +106,11 @@ async fn install_uv() -> bool {
                 .status()
                 .await
                 .expect("Failed to execute UV installation script");
-            println!("  - Task | powershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\" | Done.");
+            println!(
+                "  - Task | powershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\" | Done."
+            );
             status.success()
-        },
+        }
         _ => {
             eprintln!("[ERROR] + Unsupported operating system for UV installation.");
             false
@@ -129,7 +129,7 @@ async fn execute_uv_command(args: &[&str]) -> bool {
         println!("[TIP] + `uv` already installed, please restart the terminal.");
         return false;
     }
-    
+
     // Execute the UV command
     Command::new("uv")
         .args(args)
@@ -285,6 +285,8 @@ impl TaskRegistry {
             Box::new(create_cargo_check_task()),
             Box::new(create_cargo_build_task()),
             Box::new(create_cargo_build_release_task()),
+            Box::new(create_flang_build_dev_task()),
+            Box::new(create_flang_build_release_task()),
         ];
 
         Self { tasks }
@@ -305,6 +307,152 @@ impl TaskRegistry {
             false
         }
     }
+}
+
+// Public constants for task IDs - defined in mod.rs
+pub const FLANG_BUILD_DEV: &str = "flang_build_dev";
+pub const FLANG_BUILD_RELEASE: &str = "flang_build_release";
+
+// Concrete Fortran task factories
+
+// Create a Fortran dev build task
+fn create_flang_build_dev_task() -> Task {
+    Task::new(FLANG_BUILD_DEV, "flang build dev", || async {
+        // Detect Fortran project and build with dependencies
+        let _dependencies = crate::projects::flang::detect_fortran_dependencies().await;
+        let order = crate::projects::flang::get_compilation_order().await;
+
+        // Create target directory
+        let _ = tokio::fs::create_dir_all("./target/dev").await;
+
+        // Build each file in order
+        for file in order {
+            println!("    - Building: {}", file);
+            let status = tokio::process::Command::new("flang")
+                .arg("-g")
+                .arg("-c")
+                .arg(&file)
+                .arg("-o")
+                .arg(format!(
+                    "./target/dev/{}.o",
+                    file.replace(".f90", "").replace(".f", "")
+                ))
+                .status()
+                .await
+                .expect("Failed to execute flang command");
+
+            if !status.success() {
+                return false;
+            }
+        }
+
+        // Link the executable if we have object files
+        let object_files: Vec<String> = {
+            let mut files = Vec::new();
+            if let Ok(mut entries) = tokio::fs::read_dir("./target/dev").await {
+                while let Some(entry_result) = entries.next_entry().await.ok() {
+                    if let Some(entry) = entry_result {
+                        let path = entry.path();
+                        if path.is_file() && path.extension().unwrap_or_default() == "o" {
+                            if let Some(path_str) = path.to_str() {
+                                files.push(path_str.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+            files
+        };
+
+        if !object_files.is_empty() {
+            // Find main program file to determine executable name
+            let main_file = crate::projects::flang::find_main_program_file().await.unwrap();
+            let main_name = main_file.file_stem().unwrap().to_str().unwrap();
+
+            let status = tokio::process::Command::new("flang")
+                .arg("-g")
+                .args(object_files)
+                .arg("-o")
+                .arg(format!("./target/dev/{}.out", main_name))
+                .status()
+                .await
+                .expect("Failed to link Fortran executable");
+
+            status.success()
+        } else {
+            true
+        }
+    })
+}
+
+// Create a Fortran release build task
+fn create_flang_build_release_task() -> Task {
+    Task::new(FLANG_BUILD_RELEASE, "flang build release", || async {
+        // Detect Fortran project and build with dependencies
+        let _dependencies = crate::projects::flang::detect_fortran_dependencies().await;
+        let order = crate::projects::flang::get_compilation_order().await;
+
+        // Create target directory
+        let _ = tokio::fs::create_dir_all("./target/release").await;
+
+        // Build each file in order
+        for file in order {
+            println!("    - Building: {}", file);
+            let status = tokio::process::Command::new("flang")
+                .arg("-O3")
+                .arg("-c")
+                .arg(&file)
+                .arg("-o")
+                .arg(format!(
+                    "./target/release/{}.o",
+                    file.replace(".f90", "").replace(".f", "")
+                ))
+                .status()
+                .await
+                .expect("Failed to execute flang command");
+
+            if !status.success() {
+                return false;
+            }
+        }
+
+        // Link the executable if we have object files
+        let object_files: Vec<String> = {
+            let mut files = Vec::new();
+            if let Ok(mut entries) = tokio::fs::read_dir("./target/release").await {
+                while let Some(entry_result) = entries.next_entry().await.ok() {
+                    if let Some(entry) = entry_result {
+                        let path = entry.path();
+                        if path.is_file() && path.extension().unwrap_or_default() == "o" {
+                            if let Some(path_str) = path.to_str() {
+                                files.push(path_str.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+            files
+        };
+
+        if !object_files.is_empty() {
+            // Find main program file to determine executable name
+            let main_file = crate::projects::flang::find_main_program_file().await.unwrap();
+            let main_name = main_file.file_stem().unwrap().to_str().unwrap();
+
+            let status = tokio::process::Command::new("flang")
+                .arg("-O3")
+                .args(object_files)
+                .arg("-o")
+                .arg(format!("./target/release/{}.out", main_name))
+                .status()
+                .await
+                .expect("Failed to link Fortran executable");
+
+            status.success()
+        } else {
+            true
+        }
+    })
 }
 
 // Public API for the task system

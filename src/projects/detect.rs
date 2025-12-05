@@ -1,18 +1,19 @@
 use crate::projects::cargo::detect_cargo_project;
+use crate::projects::flang::detect_fortran_project;
 use crate::projects::uv::detect_uv_project;
 use crate::projects::{BuildCommands, Project, RunCommands, write_project_to_toml};
-use std::fs::{metadata, read_to_string};
+use tokio::fs::{metadata, read_to_string};
 
-pub fn get_or_create_project() -> Project {
+pub async fn get_or_create_project() -> Project {
     // Check if lox.toml exists
-    let lox_toml_exists = metadata("lox.toml").is_ok();
+    let lox_toml_exists = metadata("lox.toml").await.is_ok();
 
     if lox_toml_exists {
         // Read and parse lox.toml
-        if let Ok(mut project) = read_project_from_toml() {
+        if let Ok(mut project) = read_project_from_toml().await {
             // If run commands are unknown, detect them dynamically
             if project.run_commands.dev == "unknown" || project.run_commands.release == "unknown" {
-                let detected_project = detect_project_info();
+                let detected_project = detect_project_info().await;
                 project.run_commands = detected_project.run_commands;
                 write_project_to_toml(&project);
             }
@@ -21,13 +22,13 @@ pub fn get_or_create_project() -> Project {
     }
 
     // If lox.toml doesn't exist or can't be parsed, create it
-    let project = detect_project_info();
+    let project = detect_project_info().await;
     write_project_to_toml(&project);
     project
 }
 
-pub fn read_project_from_toml() -> Result<Project, String> {
-    let toml_content = read_to_string("lox.toml").map_err(|e| e.to_string())?;
+pub async fn read_project_from_toml() -> Result<Project, String> {
+    let toml_content = read_to_string("lox.toml").await.map_err(|e| e.to_string())?;
 
     let mut project_type = String::from("unknown");
     let mut name = String::from("unknown");
@@ -110,15 +111,20 @@ pub fn read_project_from_toml() -> Result<Project, String> {
     })
 }
 
-pub fn detect_project_info() -> Project {
+pub async fn detect_project_info() -> Project {
     // Try to detect Cargo project first
-    if let Some(cargo_project) = detect_cargo_project() {
+    if let Some(cargo_project) = detect_cargo_project().await {
         return cargo_project;
     }
 
     // Try to detect UV project next
-    if let Some(uv_project) = detect_uv_project() {
+    if let Some(uv_project) = detect_uv_project().await {
         return uv_project;
+    }
+
+    // Try to detect Fortran project
+    if let Some(fortran_project) = detect_fortran_project().await {
+        return fortran_project;
     }
 
     // Default to unknown project type
