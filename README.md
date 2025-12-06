@@ -2,7 +2,7 @@
 
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/EdwardJoke/lox-rs/blob/main/LICENSE) [![Release](https://img.shields.io/github/v/release/EdwardJoke/lox-rs)](https://github.com/EdwardJoke/lox-rs/releases)
 
-A command-line interface tool that makes managing your project commands easier, supporting both Rust and Python (Only uv project support now) projects.
+A command-line interface tool that makes managing your project commands easier, supporting Rust, Fortran (`fpm`, `built-in native`) and Python (`uv`) projects.
 
 ## Overview
 
@@ -45,4 +45,4 @@ lox --help
 ## Q&A
 
 - **Q: I am using the official pip as my environment configuration tool/package manager. Am I unable to use this tool?**
-  - **A: Yes, we apologize that `lox-rs` is temporarily unavailable, but we recommend using `uv`, a fast, high-performance package manager written in `Rust` who can do the same thing as `pip`. For more details, please visit the [official `Astral` website](https://astral.sh/).** The `pip` support is planned for the future (v0.3).
+  - **A: Yes, we apologize that `lox-rs` is temporarily unavailable, but we recommend using `uv`, a fast, high-performance package manager written in `Rust` who can do the same thing as `pip`. For more details, please visit the [official `Astral` website](https://astral.sh/).** The `pip` support is planned for the future (v0.4).
