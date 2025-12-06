@@ -267,6 +267,24 @@ fn create_cargo_build_release_task() -> Task {
     })
 }
 
+// Create an FPM build release task
+fn create_fpm_build_release_task() -> Task {
+    Task::new(
+        "fpm_build_release",
+        "fpm build --profile release",
+        || async {
+            Command::new("fpm")
+                .arg("build")
+                .arg("--profile")
+                .arg("release")
+                .status()
+                .await
+                .expect("Failed to execute fpm build --profile release")
+                .success()
+        },
+    )
+}
+
 // Task registry to store and retrieve tasks by ID
 struct TaskRegistry {
     tasks: Vec<Box<Task>>,
@@ -287,6 +305,7 @@ impl TaskRegistry {
             Box::new(create_cargo_build_release_task()),
             Box::new(create_flang_build_dev_task()),
             Box::new(create_flang_build_release_task()),
+            Box::new(create_fpm_build_release_task()),
         ];
 
         Self { tasks }
@@ -366,7 +385,9 @@ fn create_flang_build_dev_task() -> Task {
 
         if !object_files.is_empty() {
             // Find main program file to determine executable name
-            let main_file = crate::projects::flang::find_main_program_file().await.unwrap();
+            let main_file = crate::projects::flang::find_main_program_file()
+                .await
+                .unwrap();
             let main_name = main_file.file_stem().unwrap().to_str().unwrap();
 
             let status = tokio::process::Command::new("flang")
@@ -436,7 +457,9 @@ fn create_flang_build_release_task() -> Task {
 
         if !object_files.is_empty() {
             // Find main program file to determine executable name
-            let main_file = crate::projects::flang::find_main_program_file().await.unwrap();
+            let main_file = crate::projects::flang::find_main_program_file()
+                .await
+                .unwrap();
             let main_name = main_file.file_stem().unwrap().to_str().unwrap();
 
             let status = tokio::process::Command::new("flang")

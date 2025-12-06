@@ -1,5 +1,6 @@
 use crate::projects::cargo::detect_cargo_project;
 use crate::projects::flang::detect_fortran_project;
+use crate::projects::fpm::detect_fpm_project;
 use crate::projects::uv::detect_uv_project;
 use crate::projects::{BuildCommands, Project, RunCommands, write_project_to_toml};
 use tokio::fs::{metadata, read_to_string};
@@ -28,7 +29,9 @@ pub async fn get_or_create_project() -> Project {
 }
 
 pub async fn read_project_from_toml() -> Result<Project, String> {
-    let toml_content = read_to_string("lox.toml").await.map_err(|e| e.to_string())?;
+    let toml_content = read_to_string("lox.toml")
+        .await
+        .map_err(|e| e.to_string())?;
 
     let mut project_type = String::from("unknown");
     let mut name = String::from("unknown");
@@ -66,13 +69,13 @@ pub async fn read_project_from_toml() -> Result<Project, String> {
             match current_section.as_str() {
                 "project" => match key {
                     "type" => {
-                    project_type = value.to_string();
-                    is_library = project_type.contains("library");
-                    is_rust_project =
-                        project_type.contains("app") || project_type.contains("library");
-                    is_uv_project = project_type == "uv";
-                    is_fortran_project = project_type == "llvm-f";
-                }
+                        project_type = value.to_string();
+                        is_library = project_type.contains("library");
+                        is_rust_project =
+                            project_type.contains("app") || project_type.contains("library");
+                        is_uv_project = project_type == "uv";
+                        is_fortran_project = project_type == "llvm-f" || project_type == "fpm";
+                    }
                     "name" => name = value.to_string(),
                     "version" => version = value.to_string(),
                     _ => {}
@@ -120,6 +123,11 @@ pub async fn detect_project_info() -> Project {
     // Try to detect UV project next
     if let Some(uv_project) = detect_uv_project().await {
         return uv_project;
+    }
+
+    // Try to detect FPM project
+    if let Some(fpm_project) = detect_fpm_project().await {
+        return fpm_project;
     }
 
     // Try to detect Fortran project

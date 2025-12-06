@@ -36,22 +36,22 @@ async fn run_project(project: &projects::Project) {
 
     // Check if binary exists for Rust or Fortran projects
     if project.is_rust_project || project.is_fortran_project {
-        // Check if target directory exists
-        let target_dir = "./target";
+        // Determine the target directory based on project type
+        let is_fpm = project.project_type == "fpm";
+        let target_dir = if is_fpm { "./build" } else { "./target" };
+        let target_msg = if is_fpm { "build" } else { "target" };
 
         match metadata(target_dir) {
             Ok(_) => {
-                // Check if release binary exists
-                if !metadata(target_release).is_ok() {
-                    println!("[TIP] + Nothing at `target` .");
+                // For FPM, we don't check the exact binary path since it's managed by FPM
+                if !is_fpm && !metadata(target_release).is_ok() {
+                    println!("[TIP] + Nothing at `{}` .", target_msg);
                     println!();
                     println!("[1/2] + Build the project first.");
 
-                    // Run lox build using cargo run
+                    // Run lox build
                     println!("  - Task | lox build | ");
-                    let build_status = Command::new("cargo")
-                        .arg("run")
-                        .arg("--")
+                    let build_status = Command::new("lox")
                         .arg("build")
                         .status()
                         .await
@@ -69,7 +69,7 @@ async fn run_project(project: &projects::Project) {
                 }
             }
             Err(_) => {
-                println!("[TIP] + Nothing at `target` .");
+                println!("[TIP] + Nothing at `{}` .", target_msg);
                 println!();
                 println!("[1/2] + Build the project first.");
 

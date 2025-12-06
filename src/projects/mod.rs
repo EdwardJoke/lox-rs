@@ -1,6 +1,7 @@
 pub mod cargo;
 pub mod detect;
 pub mod flang;
+pub mod fpm;
 pub mod uv;
 
 // Re-export shared structs and functions

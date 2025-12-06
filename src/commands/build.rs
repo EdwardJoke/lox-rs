@@ -93,7 +93,7 @@ async fn build_uv_project(_project: &projects::Project) {
     println!();
 }
 
-async fn build_fortran_project(_project: &projects::Project) {
+async fn build_fortran_project(project: &projects::Project) {
     println!("[TIP] + Build for Release.");
     println!();
 
@@ -102,11 +102,22 @@ async fn build_fortran_project(_project: &projects::Project) {
 
     println!("[1/1] + Build the project");
 
-    // Execute the Fortran build task using the task system
-    tasks::execute_task_by_id(tasks::FLANG_BUILD_RELEASE).await;
+    // Execute the appropriate Fortran build task based on project type
+    if project.project_type == "fpm" {
+        tasks::execute_task_by_id(tasks::FPM_BUILD_RELEASE).await;
+    } else {
+        tasks::execute_task_by_id(tasks::FLANG_BUILD_RELEASE).await;
+    }
 
     println!();
-    println!("[TIP] + Build at + `target` .");
+    println!(
+        "[TIP] + Build at + `{}` .",
+        if project.project_type == "fpm" {
+            "build"
+        } else {
+            "target"
+        }
+    );
 
     // Calculate and display total elapsed time
     let elapsed = start_time.elapsed();

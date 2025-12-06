@@ -15,6 +15,7 @@ pub const CARGO_BUILD: &str = "cargo_build";
 pub const CARGO_BUILD_RELEASE: &str = "cargo_build_release";
 pub const FLANG_BUILD_DEV: &str = "flang_build_dev";
 pub const FLANG_BUILD_RELEASE: &str = "flang_build_release";
+pub const FPM_BUILD_RELEASE: &str = "fpm_build_release";
 
 // Private module containing the implementation
 mod task;

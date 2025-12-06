@@ -40,14 +40,16 @@ async fn run_project(project: &projects::Project) {
 
     // Check if binary exists for Rust or Fortran projects
     if project.is_rust_project || project.is_fortran_project {
-        // Check if target directory exists
-        let target_dir = "./target";
+        // Determine the target directory based on project type
+        let is_fpm = project.project_type == "fpm";
+        let target_dir = if is_fpm { "./build" } else { "./target" };
+        let target_msg = if is_fpm { "build" } else { "target" };
 
         match metadata(target_dir) {
             Ok(_) => {
-                // Check if debug binary exists
-                if !metadata(target_debug).is_ok() {
-                    println!("[TIP] + Nothing at `target` .");
+                // For FPM, we don't check the exact binary path since it's managed by FPM
+                if !is_fpm && !metadata(target_debug).is_ok() {
+                    println!("[TIP] + Nothing at `{}` .", target_msg);
                     println!();
                     println!("[1/2] + Build the project first.");
 
@@ -73,7 +75,7 @@ async fn run_project(project: &projects::Project) {
                 }
             }
             Err(_) => {
-                println!("[TIP] + Nothing at `target` .");
+                println!("[TIP] + Nothing at `{}` .", target_msg);
                 println!();
                 println!("[1/2] + Build the project first.");
 

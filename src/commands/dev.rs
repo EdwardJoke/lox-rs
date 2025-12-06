@@ -57,7 +57,7 @@ async fn build_dev_rust_project(_project: &projects::Project) {
     println!();
 }
 
-async fn build_dev_fortran_project(_project: &projects::Project) {
+async fn build_dev_fortran_project(project: &projects::Project) {
     println!("[TIP] + Build for Dev.");
     println!();
 
@@ -66,11 +66,33 @@ async fn build_dev_fortran_project(_project: &projects::Project) {
 
     println!("[1/1] + Build the project");
 
-    // Execute the Fortran dev build task using the task system
-    tasks::execute_task_by_id(tasks::FLANG_BUILD_DEV).await;
+    // Execute the appropriate Fortran dev build task based on project type
+    if project.project_type == "fpm" {
+        // For FPM, we need to use the fpm build command directly since we don't have a FLANG_BUILD_DEV equivalent
+        println!("  - Task | fpm build | ");
+        let status = tokio::process::Command::new("fpm")
+            .arg("build")
+            .status()
+            .await
+            .expect("Failed to execute fpm build");
+        println!(
+            "  - Task | fpm build | {}.",
+            if status.success() { "Done" } else { "Failed" }
+        );
+    } else {
+        // Execute the Fortran dev build task using the task system
+        tasks::execute_task_by_id(tasks::FLANG_BUILD_DEV).await;
+    }
 
     println!();
-    println!("[TIP] + Build at + `target` .");
+    println!(
+        "[TIP] + Build at + `{}` .",
+        if project.project_type == "fpm" {
+            "build"
+        } else {
+            "target"
+        }
+    );
 
     // Calculate and display total elapsed time
     let elapsed = start_time.elapsed();
