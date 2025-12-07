@@ -8,6 +8,10 @@ A command-line interface tool that makes managing your project commands easier, 
 
 lox-rs is a CLI tool designed to simplify common project workflows. It provides a unified interface for building, running, and checking your Rust or uv projects with consistent output formatting.
 
+## Demo
+
+![demo](assets/demo/demo.gif)
+
 ## Installation
 
 ### From Source
