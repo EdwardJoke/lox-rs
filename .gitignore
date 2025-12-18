@@ -11,3 +11,6 @@
 
 # New project support test directory
 /test_projects
+
+# .DS_Store
+.DS_Store
