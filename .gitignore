@@ -1,8 +1,5 @@
 # Ignore files
 
-# Target directory
-/target
-
 # Dev docs and tools directory
 /dev
 
@@ -14,3 +11,8 @@
 
 # .DS_Store
 .DS_Store
+
+# Added by goreleaser init:
+dist/
+.intentionally-empty-file.o
+target/
